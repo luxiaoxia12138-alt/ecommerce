@@ -14,7 +14,7 @@ function ProductCard({ product }) {
         id: product.id,
         name: product.name,
         price: product.price, // 这里用的是列表显示价格
-        specs: {}, // 列表页暂不选择规格
+        specs: {},
         quantity: 1,
       })
     );
