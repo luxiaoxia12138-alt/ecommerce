@@ -1,8 +1,9 @@
+// src/components/product/ProductCard.jsx
 import React from "react";
 import { useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import { addToCart, setCartOpen } from "../../store/cartSlice";
-import { Card, Button, Rate } from "antd";
+import { Card, Button, Rate, message } from "antd";
 
 function ProductCard({ product }) {
   const navigate = useNavigate();
@@ -13,12 +14,22 @@ function ProductCard({ product }) {
       addToCart({
         id: product.id,
         name: product.name,
-        price: product.price, // 这里用的是列表显示价格
+        price: product.price,
         specs: {},
         quantity: 1,
       })
     );
     dispatch(setCartOpen(true));
+
+    // 轻提示：操作反馈
+    message.success({
+      content: "已加入购物车",
+      duration: 1.2,
+    });
+  };
+
+  const handleGoDetail = () => {
+    navigate(`/product/${product.id}`);
   };
 
   return (
@@ -32,11 +43,12 @@ function ProductCard({ product }) {
             padding: 8,
             background: "#fff",
           }}
-          onClick={() => navigate(`/product/${product.id}`)}
+          onClick={handleGoDetail}
         >
           <img
             alt={product.name}
             src={product.thumbnail}
+            loading="lazy" // 懒加载图片
             style={{
               width: "100%",
               height: 180,
@@ -53,7 +65,7 @@ function ProductCard({ product }) {
           />
         </div>
       }
-      onClick={() => navigate(`/product/${product.id}`)}
+      onClick={handleGoDetail}
     >
       <div className="product-name">{product.name}</div>
 
@@ -91,4 +103,5 @@ function ProductCard({ product }) {
   );
 }
 
-export default ProductCard;
+// 避免列表刷新时不必要的重复渲染
+export default React.memo(ProductCard);

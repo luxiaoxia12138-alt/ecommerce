@@ -1,49 +1,53 @@
+// src/store/productsSlice.js
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
 import { fetchProducts } from "../api/mock";
 
 // 异步加载商品列表
 export const loadProducts = createAsyncThunk("products/load", async () => {
-  const data = await fetchProducts();
+  const data = await fetchProducts(); // 要求返回一个商品数组
   return data;
 });
 
+const initialState = {
+  all: [], // 所有商品（原始数据）
+  filtered: [], // 筛选之后的商品（用于列表渲染）
+
+  status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
+  error: null,
+
+  // 筛选 / 排序 / 搜索条件
+  category: "all",
+  priceRange: [0, 20000],
+  sortBy: "default", // 'default' | 'priceAsc' | 'priceDesc' | 'sales' | 'rating'
+  searchKeyword: "", // 搜索关键字
+};
+
 const productsSlice = createSlice({
   name: "products",
-  initialState: {
-    all: [], // 所有商品
-    filtered: [], // 筛选之后的商品
-    status: "idle", // 'idle' | 'loading' | 'succeeded' | 'failed'
-    error: null,
-
-    // 筛选条件
-    category: "all",
-    priceRange: [0, 20000],
-    sortBy: "default", // 'default' | 'priceAsc' | 'priceDesc' | 'sales'
-    searchKeyword: "", // 搜索关键字
-    currentPage: 1,
-    pageSize: 12,
-  },
+  initialState,
   reducers: {
     setCategory(state, action) {
       state.category = action.payload;
-      state.currentPage = 1;
       applyFilterAndSort(state);
     },
     setPriceRange(state, action) {
       state.priceRange = action.payload;
-      state.currentPage = 1;
       applyFilterAndSort(state);
     },
     setSortBy(state, action) {
       state.sortBy = action.payload;
       applyFilterAndSort(state);
     },
-    setCurrentPage(state, action) {
-      state.currentPage = action.payload;
-    },
     setSearchKeyword(state, action) {
       state.searchKeyword = action.payload;
-      state.currentPage = 1;
+      applyFilterAndSort(state);
+    },
+    // 一键重置所有筛选
+    resetFilters(state) {
+      state.category = "all";
+      state.priceRange = [0, 20000];
+      state.sortBy = "default";
+      state.searchKeyword = "";
       applyFilterAndSort(state);
     },
   },
@@ -51,20 +55,22 @@ const productsSlice = createSlice({
     builder
       .addCase(loadProducts.pending, (state) => {
         state.status = "loading";
+        state.error = null;
       })
       .addCase(loadProducts.fulfilled, (state, action) => {
         state.status = "succeeded";
         state.all = action.payload;
-        state.filtered = action.payload;
+        // 初次加载数据时，根据当前筛选条件生成 filtered
+        applyFilterAndSort(state);
       })
       .addCase(loadProducts.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.error.message;
+        state.error = action.error?.message || "加载商品失败";
       });
   },
 });
 
-// 内部使用的函数：根据条件筛选+排序
+// 内部使用的函数：根据条件筛选 + 排序
 function applyFilterAndSort(state) {
   const { all, category, priceRange, sortBy, searchKeyword } = state;
 
@@ -107,7 +113,7 @@ export const {
   setPriceRange,
   setSortBy,
   setSearchKeyword,
-  setCurrentPage,
+  resetFilters,
 } = productsSlice.actions;
 
 export default productsSlice.reducer;
